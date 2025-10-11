@@ -1,17 +1,12 @@
 "use client";
 
-import { Loader, Loader2 } from "lucide-react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { Loader2 } from "lucide-react";
 import { config } from "~/auth/config";
-import type { User } from "~/auth/types";
 import { useAuth } from "~/auth/useAuth";
 import { Button } from "~/components/ui/button";
 
 export default function HomePage() {
   const { user, loading, refetch } = useAuth();
-  const router = useRouter();
 
   async function handleLogin() {
     try {
