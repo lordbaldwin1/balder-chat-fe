@@ -25,7 +25,7 @@ export function useAuth() {
       }
     };
 
-    authenticate();
+    void authenticate();
   }, []);
 
   const refetch = async () => {

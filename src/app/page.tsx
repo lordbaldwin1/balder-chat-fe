@@ -1,20 +1,22 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { config } from "~/auth/config";
 import { useAuth } from "~/auth/useAuth";
 import { Button } from "~/components/ui/button";
 
 export default function HomePage() {
-  const { user, loading, refetch } = useAuth();
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
   async function handleLogin() {
     try {
-      await fetch(`${config.BACKEND_API_URL}/users/create`, {
+      await fetch(`${config.BACKEND_API_URL}/api/users/create`, {
         method: "POST",
         credentials: "include",
       });
-      await refetch();
+      router.push("/rooms");
     } catch (err: unknown) {
       console.error(
         err instanceof Error ? err.message : "Unknown error occurred"

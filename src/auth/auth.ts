@@ -3,7 +3,7 @@ import type { User } from "./types"
 
 export async function checkAuth() {
     try {
-        const res = await fetch(`${config.BACKEND_API_URL}/users`, {
+        const res = await fetch(`${config.BACKEND_API_URL}/api/users`, {
             method: "GET",
             credentials: "include",
         });
