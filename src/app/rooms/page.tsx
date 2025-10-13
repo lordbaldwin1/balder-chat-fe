@@ -1,8 +1,9 @@
 "use client";
 
 import { Loader } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { config } from "~/auth/config";
+import type { RoomResponse } from "~/auth/types";
 import { Button } from "~/components/ui/button";
 import {
   Dialog,
@@ -16,17 +17,47 @@ import {
 } from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
+import { toast } from "sonner";
+import Link from "next/link";
 
 export default function RoomsPage() {
+  const [rooms, setRooms] = useState<RoomResponse[]>([]);
+
+  useEffect(() => {
+    async function fetchRooms() {
+      const response = await fetch(`${config.BACKEND_API_URL}/api/rooms`, {
+        method: "GET",
+      });
+
+      const rooms = (await response.json()) as RoomResponse[];
+      setRooms(rooms);
+    }
+    void fetchRooms();
+  }, []);
+
+  function onRoomCreated(newRoom: RoomResponse) {
+    setRooms((prevRooms) => [...prevRooms, newRoom]);
+  }
+
   return (
-    <div>
+    <div className="flex flex-col items-center justify-center space-y-6">
       <h1>rooms</h1>
-      <CreateRoomDialog />
+      <CreateRoomDialog onRoomCreated={onRoomCreated} />
+      {rooms.map((room) => (
+        <div key={room.id}>
+          <Link href={`/rooms/${room.id}`}>
+            <Button className="cursor-pointer">{room.name}</Button>
+          </Link>
+        </div>
+      ))}
     </div>
   );
 }
 
-export function CreateRoomDialog() {
+type CreateRoomDialogProps = {
+  onRoomCreated: (room: RoomResponse) => void;
+};
+export function CreateRoomDialog({ onRoomCreated }: CreateRoomDialogProps) {
   const [room, setRoom] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -36,11 +67,15 @@ export function CreateRoomDialog() {
     setError("");
 
     try {
+      console.log(room);
       const response = await fetch(
         `${config.BACKEND_API_URL}/api/rooms/create`,
         {
           method: "POST",
           credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
           body: JSON.stringify({ room: room }),
         },
       );
@@ -50,6 +85,10 @@ export function CreateRoomDialog() {
           `${response.status} ${response.statusText.toLowerCase()}`,
         );
       }
+
+      const createdRoom = (await response.json()) as RoomResponse;
+      onRoomCreated(createdRoom);
+      toast(`${createdRoom.name} created by user ${createdRoom.ownerId}`);
     } catch (err) {
       console.warn(err);
       if (err instanceof Error) {
