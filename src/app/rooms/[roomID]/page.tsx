@@ -1,13 +1,36 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
+import { config } from "~/auth/config";
 
 export default function RoomPage() {
+  const socketRef = useRef<WebSocket | undefined>(undefined);
+  const [messages, setMessages] = useState<string[]>([]);
   const params = useParams<{ roomID: string }>();
-  console.log(params.roomID);
 
   useEffect(() => {
+    const websocket = new WebSocket(`${config.BACKEND_API_URL}/chat`);
+    socketRef.current = websocket;
+
+    websocket.addEventListener("open", () => {
+      toast("connected to chat successfully");
+    });
+
+    websocket.addEventListener("message", (event) => {
+      const data = typeof event.data === "string" ? event.data : "";
+      setMessages((prevMessages) => [...prevMessages, data]);
+    });
+
+    websocket.addEventListener("close", () => {
+      toast("disconnected from room, try reloading page");
+    });
+
+    websocket.addEventListener("error", (err) => {
+      toast(`error: ${err.type}`);
+    });
+
     async function fetchChats() {
       return 1;
     }
@@ -16,7 +39,7 @@ export default function RoomPage() {
   }, []);
 
   return (
-    <div className="flex flex-col h-[calc(100vh-10rem)]">
+    <div className="flex h-[calc(100vh-10rem)] flex-col">
       <div className="flex-1 space-y-2 overflow-y-auto p-4">
         <div className="rounded p-2">Hello 👋</div>
         <div className="rounded p-2">How are you?</div>
