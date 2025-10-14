@@ -4,14 +4,18 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { config } from "~/auth/config";
+import { useAuth } from "~/auth/useAuth";
 
 export default function RoomPage() {
+  const { user } = useAuth();
   const socketRef = useRef<WebSocket | undefined>(undefined);
   const [messages, setMessages] = useState<string[]>([]);
   const params = useParams<{ roomID: string }>();
 
   useEffect(() => {
-    const websocket = new WebSocket(`${config.BACKEND_API_URL}/chat`);
+    const websocket = new WebSocket(
+      `${config.BACKEND_API_URL}/chat?roomID=${params.roomID}`,
+    );
     socketRef.current = websocket;
 
     websocket.addEventListener("open", () => {
@@ -24,7 +28,7 @@ export default function RoomPage() {
     });
 
     websocket.addEventListener("close", () => {
-      toast("disconnected from room, try reloading page");
+      toast("disconnected from room");
     });
 
     websocket.addEventListener("error", (err) => {
@@ -36,7 +40,14 @@ export default function RoomPage() {
     }
 
     void fetchChats();
-  }, []);
+
+    return () => {
+      if (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING) {
+        websocket.close();
+      }
+      socketRef.current = undefined;
+    };
+  }, [params.roomID]);
 
   return (
     <div className="flex h-[calc(100vh-10rem)] flex-col">
