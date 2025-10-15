@@ -10,9 +10,9 @@ import { Button } from "~/components/ui/button";
 
 export const wsMessageSchema = z.object({
   userID: z.string(),
-  username: z.string(),
+  username: z.string().optional(),
   roomID: z.string(),
-  content: z.string().optional(),
+  content: z.string(),
   timestamp: z.coerce.date(),
 });
 export type wsMessage = z.infer<typeof wsMessageSchema>;
@@ -35,17 +35,13 @@ export default function RoomPage() {
     });
 
     websocket.addEventListener("message", (event) => {
-      console.log("msg received!")
       const data = typeof event.data === "string" ? event.data : "";
       if (data.length === 0) {
-        console.log("data length 0")
         return;
       }
-      console.log(data);
 
       const parsed = wsMessageSchema.safeParse(JSON.parse(data));
       if (parsed.success) {
-        console.log("parsed:", parsed.data);
         setMessages((prevMessages) => [...prevMessages, parsed.data]);
       }
     });
@@ -59,7 +55,25 @@ export default function RoomPage() {
     });
 
     async function fetchChats() {
-      return 1;
+      try {
+        const res = await fetch(
+          `${config.BACKEND_API_URL}/api/messages/${params.roomID}`,
+        );
+
+        if (!res.ok) {
+          toast(`failed to fetch previous messages`);
+          return;
+        }
+
+        const messages = (await res.json()) as wsMessage[];
+        setMessages(messages);
+      } catch (err) {
+        if (err instanceof Error) {
+          toast(`error loading previous messages: ${err.message}`);
+          return;
+        }
+        toast(`failed to load previous messages`);
+      }
     }
 
     void fetchChats();
